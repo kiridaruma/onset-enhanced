@@ -1,0 +1,19 @@
+##################################
+# Onset! Enhanced config samples #
+##################################
+
+# directory which saved onset data
+data_dir="/path/to/data_dir/"
+
+# bcdice-api endpoint url
+# see also https://github.com/bcdice/bcdice-api
+bcdice_url="http://example.com/bcdice-api/endpoint"
+
+# room settings
+room_count_limit=100
+room_name_limit=30
+room_delete_interval_sec=86400
+
+# nickname and text settings
+message_length_limit=5000
+nickname_length_limit=20

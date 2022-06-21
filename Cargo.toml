@@ -10,3 +10,5 @@ axum = "0.5.9"
 hyper = { version = "0.14.19", features = ["full"] }
 tokio = { version = "1.19.2", features = ["full"] }
 tower = "0.4"
+toml = "0.5.9"
+serde = { version = "1.0.137", features = ["derive"] }
