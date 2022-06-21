@@ -35,3 +35,73 @@ impl Config {
         Ok(file_text)
     }
 }
+
+#[cfg(test)]
+mod test {
+    use crate::config::{Config, Error};
+    use std::fs::remove_file;
+    use std::path::PathBuf;
+    use std::{fs::File, io::Write};
+
+    #[test]
+    fn load_success() {
+        let valid_toml_text = String::from(
+            r#"
+##################################
+# Onset! Enhanced config samples #
+##################################
+
+# directory which saved onset data
+data_dir="/path/to/data_dir/"
+
+# bcdice-api endpoint url
+# see also https://github.com/bcdice/bcdice-api
+bcdice_url="http://example.com/bcdice-api/endpoint"
+
+# room settings
+room_count_limit=100
+room_name_limit=30
+room_delete_interval_sec=86400
+
+# nickname and text settings
+message_length_limit=5000
+nickname_length_limit=20
+        "#,
+        );
+
+        let file_path = PathBuf::from("./config_valid_toml_test.toml");
+        let mut file = File::create(&file_path).unwrap();
+        file.write_all(valid_toml_text.as_bytes()).unwrap();
+        let result = Config::load(&file_path);
+
+        assert_eq!(true, result.is_ok());
+        remove_file(file_path).unwrap();
+    }
+
+    #[test]
+    fn failed_file_not_exists() {
+        let not_exists_file_path = PathBuf::from("./not_exists");
+        let result = Config::load(&not_exists_file_path);
+        assert_eq!(true, result.is_err());
+        match result {
+            Err(Error::LoadFailed(_)) => assert!(true),
+            _ => assert!(false),
+        }
+    }
+
+    #[test]
+    fn failed_parse_toml() {
+        let invalid_toml_text = String::from("The niece of time");
+        let file_path = PathBuf::from("./config_invalid_toml_test.toml");
+        let mut file = File::create(&file_path).unwrap();
+        file.write_all(invalid_toml_text.as_bytes()).unwrap();
+        let result = Config::load(&file_path);
+
+        assert_eq!(true, result.is_err());
+        match result {
+            Err(Error::ParseFailed(_)) => assert!(true),
+            _ => assert!(false),
+        }
+        remove_file(file_path).unwrap();
+    }
+}
