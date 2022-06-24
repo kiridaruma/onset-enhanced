@@ -1,4 +1,5 @@
 mod config;
+mod file;
 mod room;
 
 use std::{env, path::PathBuf};
