@@ -1,7 +1,8 @@
+use fs2::{self, FileExt};
 use serde::Deserialize;
-use std::io;
-use std::io::Read;
-use std::{fs::File, path::Path, path::PathBuf};
+use std::fs::File;
+use std::io::{self, Read};
+use std::path::{Path, PathBuf};
 use toml;
 
 #[derive(Deserialize)]
@@ -55,10 +56,13 @@ impl Config {
         toml::from_str(file_text.as_str()).map_err(|e| Error::ParseFailed(e))
     }
 
-    fn load_file(path: &Path) -> Result<String, io::Error> {
-        let mut file = File::open(path)?;
+    fn load_file(path: &Path) -> io::Result<String> {
         let mut file_text = String::new();
+        let mut file = File::open(path)?;
+
+        file.lock_shared()?;
         file.read_to_string(&mut file_text)?;
+        file.unlock()?;
 
         Ok(file_text)
     }
