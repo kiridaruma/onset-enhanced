@@ -8,13 +8,13 @@ pub struct Roomlist {
     list: HashMap<Uuid, Room>,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, PartialEq, Eq, Debug, Clone)]
 pub struct Room {
-    id: Uuid,
-    name: String,
-    description: String,
-    created_at: DateTime<Local>,
-    updated_at: DateTime<Local>,
+    pub id: Uuid,
+    pub name: String,
+    pub description: String,
+    pub created_at: DateTime<Local>,
+    pub updated_at: DateTime<Local>,
 }
 
 impl Roomlist {
@@ -24,12 +24,7 @@ impl Roomlist {
         }
     }
 
-    pub fn create_room(
-        &mut self,
-        name: String,
-        description: String,
-        now: DateTime<Local>,
-    ) -> &Room {
+    pub fn create_room(&mut self, name: String, description: String, now: DateTime<Local>) -> Uuid {
         let id = Uuid::new_v4();
         let room = Room {
             id,
@@ -39,7 +34,7 @@ impl Roomlist {
             updated_at: now,
         };
         self.list.insert(id, room);
-        self.list.get(&id).unwrap()
+        id
     }
 
     pub fn find(&self, id: &Uuid) -> Option<&Room> {
@@ -52,7 +47,7 @@ impl Roomlist {
         name: String,
         description: String,
         now: DateTime<Local>,
-    ) -> Option<&Room> {
+    ) -> Option<()> {
         let target_room = self.find(&id)?;
         let new_room = Room {
             id,
@@ -62,28 +57,65 @@ impl Roomlist {
             updated_at: now,
         };
         self.list.insert(id, new_room);
-        self.find(&id)
+        Some(())
     }
 }
 
-impl Room {
-    pub fn id(&self) -> &Uuid {
-        &self.id
+#[cfg(test)]
+mod test {
+    use super::Roomlist;
+    use chrono::Local;
+    use uuid::Uuid;
+
+    #[test]
+    fn create_and_find_room() {
+        let mut roomlist = Roomlist::empty_roomlist();
+        let name = String::from("name");
+        let description = String::from("description");
+        let now = Local::now();
+
+        let room_id = roomlist.create_room(name, description, now);
+        assert!(roomlist.find(&room_id).is_some());
+
+        let room = roomlist.find(&room_id).unwrap();
+        assert_eq!("name", room.name);
+        assert_eq!("description", room.description);
+        assert_eq!(now.timestamp(), room.created_at.timestamp());
+        assert_eq!(now.timestamp(), room.updated_at.timestamp());
     }
 
-    pub fn name(&self) -> &str {
-        &self.name
+    #[test]
+    fn room_id_not_found() {
+        let mut roomlist = Roomlist::empty_roomlist();
+        let name = String::from("部屋名");
+        let description = String::from("説明");
+        let now = Local::now();
+
+        roomlist.create_room(name, description, now);
+        let not_exists_room_id = Uuid::new_v4();
+        assert!(roomlist.find(&not_exists_room_id).is_none());
     }
 
-    pub fn description(&self) -> &str {
-        &self.description
-    }
+    #[test]
+    fn update_room() {
+        let mut roomlist = Roomlist::empty_roomlist();
+        let name = String::from("name");
+        let description = String::from("description");
+        let created_at = Local::now();
 
-    pub fn created_at(&self) -> &DateTime<Local> {
-        &self.created_at
-    }
+        let room_id = roomlist.create_room(name, description, created_at);
+        let updated_at = Local::now();
+        let new_name = String::from("new_name");
+        let new_description = String::from("new_description");
+        let result = roomlist.update_room(room_id, new_name, new_description, updated_at);
 
-    pub fn updated_at(&self) -> &DateTime<Local> {
-        &self.updated_at
+        assert!(result.is_some());
+        assert!(roomlist.find(&room_id).is_some());
+        let updated_room = roomlist.find(&room_id).unwrap();
+        assert_eq!(room_id, updated_room.id);
+        assert_eq!("new_name", updated_room.name);
+        assert_eq!("new_description", updated_room.description);
+        assert_eq!(created_at.timestamp(), updated_room.created_at.timestamp());
+        assert_eq!(updated_at.timestamp(), updated_room.updated_at.timestamp());
     }
 }
